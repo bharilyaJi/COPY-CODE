@@ -1,0 +1,165 @@
+from tensorflow import keras
+import matplotlob.pyplot as plt
+import tensorflow as tf
+import pandas as pd
+import nnumpy as np
+import imageio
+import cv2
+import os
+
+
+
+DATA_FOLDER = ' . /input/deepfake-detection-challenge'
+TRAIN_SAMPLE_FOLDER = 'train_sample_videos'
+TEST_FOLDER = 'test_videos"
+
+print(f"Train samples: {len(os.listdir(os.path.join(DATA_FOLDER, TRAIN_SAMPLE_FOLDER)) )}")
+print(f"Test samples: {len(os.listdir(os.path.join(DATA_FOLDER, TEST_FOLDER)) )}")
+
+
+train_sample_metadata = pd.read_json('../input/deepfake-detection-challenge/train_sample_videos/metadata.json').T
+train_sample_metadata.head()
+train.sample_metadata.groupby('lebel)['label'].count().plot(figsize=(15,5),kind='bar',title='Distribution of Labels in the training set' )
+plt.show()
+train_sample_metadata.shape
+
+
+Fake_train_sample_video = list(train_metadata.loc[train_sample_metadata.label=='Fake'].sample(10).index)
+fake_train_sample_video
+
+
+def display_image_from_video(video_path):
+'''
+input: video_path - path for video process:
+1. perform a video capture from the video
+2. read the image
+3. display the image
+'''
+capture_image = cv2. VideoCapture(video_path)
+ret, frame = capture_image.read()
+fig = plt. figure(figsize=(10,10))
+ax = fig-add_subplot (111)
+frame = cv2. cvtColor (frame, cv2. COLOR_BGR2RGB)
+ax. imshow (frame)
+
+
+for video_file in fake_train_sample_video:
+    display_image_from_video(os.path.join(DATA_FOLDER, TRAIN_SAMPLE_FOLDER, Video_file))
+
+real_train_sample_video = list(train_sample_metadata.loc[train_sample_metadata. label== 'REAL']. sample(5) .index)
+real_train_sample_video
+
+
+for video_file in real_train_sample_video:
+    display_image_from_video(os.path.join(DATA_FOLDER, TRAIN_SAMPLE_FOLDER, video_file))
+
+
+train_sample_metadata['original'].value_counts()[0:5]
+
+
+def display_image_from_video_list(video_path_list, video_folder=TRAIN_SAMPLE_FOLDER) :
+    '''
+    input: video_path_list - path for video process:
+    0. for each video in the video path list
+    1. perform a video capture from the video
+    2. read the image
+    3. display the image
+    '''
+    plt. figure()
+    fig, ax = plt. subplots(2,3, figsize= (16,8))
+    # we only show images extracted from the first 6 videos
+    for i, video_file in enumerate(video_path_list[0:6]):
+    video_path = os. path. join (DATA_FOLDER, video_folder, video_file)
+    capture_image = cv2. VideoCapture(video_path)
+    ret, frame = capture image.read ()
+    frame = cv2. cvtColor (frame, cv2. COLOR_BGR2RGB)
+    ax[i//3, 1%3]. imshow (frame)
+    ax[i//3, 1%3]-set_title(f"Video: [video_file}")
+    ax[i//3, 1%3]-axis(*on')
+
+same_original_fake_train_sample_video= list(train_sample_matches.loc[train_sample_metadata.original=='atvmxvwyns.mp4'].index)
+display_image_from_video_list(same_original_fake_train_sample_video)
+
+
+
+test_videos=pd.DataFrame(list(ps.listdir(os.path.join(DATA_FOLDER,TEST_FOLDER))),columns=['video'])
+test_videos.head()
+
+display_image_from_video(os.path.join(DATA_FOLDER,TEST_FOLDER,test_videos.iloc[2].video))
+
+
+fake_videos=list(train_sampledata.loc[train_sample_metadata.label=='FAKE'.index])
+
+
+from IPython.display import HTML
+from base64 import b64encode
+
+
+def play_video (video_file, subset=TRAIN_SAMPLE_FOLDER) :
+    '''
+    Display video
+    param: video_file - the name of the video file to display
+    param: subset - the folder where the video file is located (can be TRAIN_SAMPLE_FOLDER or TEST_Folder)
+    '''
+    video_url = open (os. path. join (DATA_FOLDER, subset, video_file), 'rb'). read ()
+    data_ur] = "data: video/mp4;base64," + b64encode (video_ur]) . decode()
+    return HTML("""<video width=500 controls><source src="%s" type="video/mp4"></video›"""  % data_url)
+
+play_video(fake_videos [10])
+
+
+
+#MODELLING   (CNN RNN architecture )
+
+IMG_SIZE=224
+BATCH_SIZE=32
+EPOCHS=10
+
+MAX_SEQ_LENGTH=20
+NUM_FEATURES =2048
+
+
+def crop_center_square (frame) :
+
+    y, x = frame. shape [0:2]
+    min_dim = min (y, x)
+    start_x = (x // 2) - (min_dim // 2)
+    start_y = (y // 2) - (min_dim // 2)
+    return frame[start_y : start_y + min_dim, start_x : start_x + min_dim]
+def load_videopath, max_frames=0, resize=(IMG_SIZE, IMG_SIZE)) :
+    cap = cv2. VideoCapture (path)
+    frames = []
+    try:
+        while True:
+        ret, frame = cap. read(
+        if not ret:
+              break
+        frame = crop_center_square (frame)
+        frame = cv2.resize(frame, resize)
+        frame = frame[:, :, [2, 1, 01]
+        frames. append (frame)
+
+        if len (frames) == max_frames:
+            break
+    finally:
+        cap. release ()
+    return np.array(frames)
+
+
+
+def build_feature_extractor():
+    feature_extractor = keras.applications.InceptionV3(
+        weights="imagenet" , include_top=False, pooling="avg"
+        input_shape=(IMG_SIZE, IMG_SIZE, 3) ,
+        preprocess_input = keras.applications.inception_v3.preprocess_input
+        inputs = keras. Input ((IMG_SIZE, IMG_SIZE, 3),
+    )
+    preprocessed_input = keras.application.inception_v3.preprocess_input
+
+    input=keras.Input((IMG_SIZE,IMG_SIZE,3))
+    preprocessed=preprocessed_input(inputs)
+
+    outputs = feature_extractor (preprocessed)
+    return keras. Model (inputs, outputs, name="feature_extractor")
+
+feature_extractor = build_feature_extractor ()
